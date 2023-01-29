@@ -22,7 +22,7 @@ sensor_PIR = Pin(23, Pin.IN, Pin.PULL_UP)
 relay= Pin(21,Pin.OUT)
 
 #Pines usados para el sensor de temperatura DHT11 y el led de alerta
-sensor_DHT11= dht.DHT11 (Pin(15))   # el DHT22 es para simulación en Wokwi
+sensor_DHT11= dht.DHT22 (Pin(15))   # el DHT22 es para simulación en Wokwi
 #sensor_DHT11= dht.DHT11 (Pin(15))   # el DHT11 es para pracitica en la protoboard
 led_rojo = Pin(2,Pin.OUT)
 led_verde = Pin(4,Pin.OUT)
@@ -56,7 +56,7 @@ led_azul.value(0)
 
 #-------------CONDICIONAL IF PARA CONECTARSE A LA RED WIFI Y EJECUTAR EL PROGRAMA---------
 
-if conectaWifi ("Jeison","Aa12345678.*"):
+if conectaWifi ("NOMBRE DE LA RED WIFI A LA QUE SE VA A CONECTAR","CONTRASENA DE LA RED WIFI"): #Se reemplasan los espacios con el nombre de la red Wifi y la contraseña. 
  
     print ("Conexión exitosa!") 
     print('Datos de la red (IP/netmask/gw/DNS):', miRed.ifconfig()) 
@@ -76,6 +76,7 @@ if conectaWifi ("Jeison","Aa12345678.*"):
 
         try:
             sensor_DHT11.measure()
+
         except:
             sensor_DHT11.measure()
             temperatura=sensor_DHT11.temperature()
@@ -88,32 +89,44 @@ if conectaWifi ("Jeison","Aa12345678.*"):
                 led_rojo.value(0)
                 led_verde.value(0)
                 led_azul.value(255)
+                respuesta1 = urequests.get(url_gmail+"&value1="+str(temperatura)+"&value2="+str(humedad)+"&value3="+str(estado_sensor_PIR))
+                #url para enviar la alerta en caso de que la temperatura sea muy baja.
+
+                respuesta1.close ()
+                time.sleep(30)
+                
             #prende el led verde si la temperatura esta entre 18 y 27 grados centigrados
-            
             elif temperatura < 27:
                 print(f"{temperatura}°C Temperatura adecuada ")
                 led_rojo.value(0)
                 led_verde.value(255)
                 led_azul.value(0)
+                
             #prende el led rojo si la temperatura es superior a 27 grados centigrados
-            
             else:
                 print(f"{temperatura}°C Temperatura muy alta, bajar temperatura")
                 led_rojo.value(255)
                 led_verde.value(0)
                 led_azul.value(0)
                 respuesta1 = urequests.get(url_gmail+"&value1="+str(temperatura)+"&value2="+str(humedad)+"&value3="+str(estado_sensor_PIR)) 
-                #url para enviar la alerta en caso de que la temperatura sea demaciado alta.
+                #url para enviar la alerta en caso de que la temperatura sea muy alta.
                 respuesta1.close ()
                 time.sleep(30) # para no llenar de alertas al usuario se deja un sleep en esta linea, y generar una espera para el 
                                 #envio entre notificaciones.
 
             if humedad < 25:
                 print(f"{humedad}°C Humedad muy baja")
+                respuesta1 = urequests.get(url_gmail+"&value1="+str(temperatura)+"&value2="+str(humedad)+"&value3="+str(estado_sensor_PIR)) 
+                respuesta1.close ()
+                time.sleep(30)                                
             elif humedad < 80:
                 print(f"{humedad}°C Humedad adecuada")
+                
             else:
                 print(f"{humedad}°C Humedad muy alta")
+                respuesta1 = urequests.get(url_gmail+"&value1="+str(temperatura)+"&value2="+str(humedad)+"&value3="+str(estado_sensor_PIR)) 
+                respuesta1.close ()
+                time.sleep(30)
             print("")
             time.sleep(1)
 
@@ -137,5 +150,14 @@ if conectaWifi ("Jeison","Aa12345678.*"):
 #------------------------SI NO SE LOGRA LA CONEXIÓN A WIFI--------------------------
             
 else: 
-       print ("Imposible conectar") 
+       print ("Imposible conectar")
        miRed.active (False)
+       while True:
+           led_azul.on()
+           time.sleep(1)
+           led_azul.off()
+           led_rojo.on()
+           time.sleep(3)
+           led_rojo.off()
+        
+
